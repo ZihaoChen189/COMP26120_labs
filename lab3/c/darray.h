@@ -1,4 +1,4 @@
-// Giles Reger, 2019
+ // Giles Reger, 2019
 
 #include <stdbool.h>
 
