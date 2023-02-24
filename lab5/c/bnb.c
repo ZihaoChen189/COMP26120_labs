@@ -10,6 +10,7 @@
 #include <assert.h>  // we are using assert.h to check some conditions remain true
 #include <math.h>
 #include <stdbool.h>
+#include <string.h>  // memset
 
 #define DOUB_MAX 10e30  // a large number, must be greater than max value of any solution
 #define SIZE 100000 // an estimate of how large the priority queue could become
@@ -115,8 +116,7 @@ void print_sol(struc_sol *sol)
   printf("\n");
 }
 
-void frac_bound(struc_sol *sol, int fix)
-{
+void frac_bound(struc_sol *sol, int fix){
   // Updates the values sol->val and sol->bound                                 
 
   // Computes the fractional knapsack upper bound                               
@@ -158,10 +158,11 @@ void frac_bound(struc_sol *sol, int fix)
 
   // add in items the rest of the items until capacity is exceeded              
   i=fix+1;
-  do
-    {
+  do{
     //ADD CODE HERE to update totalw and totalp
-      i++;
+	totalw += item_weights[temp_indexes[i]];  // update the i-th item weight to the bag
+    totalp += item_values[temp_indexes[i]];  // update the i-th item value to the bag
+    i++;  // update
     } while((i<=Nitems)&&(totalw<Capacity));
 
   /* if over-run the capacity, adjust profit total by subtracting 
@@ -169,8 +170,7 @@ void frac_bound(struc_sol *sol, int fix)
   if(totalw>Capacity)
     {
       --i;
-      totalp-=((double)(totalw-Capacity)/(double)(item_weights[temp_indexes[i]]\
-						  ))*item_values[temp_indexes[i]];
+      totalp-=((double)(totalw-Capacity)/(double)(item_weights[temp_indexes[i]])) * item_values[temp_indexes[i]];
     }
  sol->bound=totalp;
 }
@@ -206,8 +206,7 @@ int main(int argc, char *argv[1])
 }
 
 
-void branch_and_bound(int *final_sol)
-{
+void branch_and_bound(int *final_sol){
   // branch and bound
 
   // start with the empty solution vector
@@ -228,6 +227,38 @@ void branch_and_bound(int *final_sol)
   
 
   /* YOUR CODE GOES HERE */
+    struc_sol root, left, right;  // three structs
+
+    memset(root.solution_vec, 0, Nitems);  // initialize
+    root.fixed = 0;  // IMPORTANT parameter
+    frac_bound(&root, root.fixed);  // solution like "*..*", actually we cannot sure any position in the solution vector
+    insert(root);  // insert the initial solution to the priority quene and ready to replace * to 1 or 0
+
+	// iteration
+    while(QueueSize > 0) {  
+        root = removeMax();  // may useless firstly, but IMPORTANT after one iteration to return the struct who had the max bound value
+		// no matter how to compare, if the number of fixed items larger than the limit
+		// break the loop, since there is no need for continuing the iteration
+        if(root.fixed >= Nitems)
+            break;
+        
+		// ADD this item 1*******
+        copy_array(root.solution_vec, left.solution_vec);  // copy the current "root" to the "left" struct
+        left.solution_vec[root.fixed + 1] = 1;  // UPDATE the related(next) position
+        left.fixed = root.fixed + 1;  // UPDATE the number of fixed items
+        frac_bound(&left, left.fixed);  // derive the bound value
+        if(left.val != -1)  // prun?               
+            insert(left);  // add to the priority quene
+        
+		// DONT add this item 0******
+        copy_array(root.solution_vec, right.solution_vec);  // copy the current "root" to the "right" struct
+        right.solution_vec[root.fixed+1] = 0;  // UPDATE the related(next) position
+        right.fixed = root.fixed + 1;  // UPDATE the number of fixed items
+        frac_bound(&right, right.fixed);  // derive the bound value
+        if(right.val != -1)  // prun?
+            insert(right);  // add to the priority quene
+    }
+    copy_array(root.solution_vec, final_sol);  // pass the final solution to the pointer address after finishing the iteration
 
 }
   

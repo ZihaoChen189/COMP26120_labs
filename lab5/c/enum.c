@@ -1,6 +1,7 @@
 
 // enum - full enumeration of knapsack solutions
-// (C) Joshua Knowles
+// (C) Joshua Knowles, 2010-2013
+// for issues: email j.knowles@manchester.ac.uk
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,6 +22,7 @@ extern void sort_by_ratio();
 extern int check_evaluate_and_print_sol(int *sol,  int *total_value, int *total_weight);
 void enumerate();
 int next_binary(int *str, int Nitems);
+
 
 int main(int argc, char *argv[])
 {
@@ -48,24 +50,32 @@ void enumerate()
 
   // set the knapsack initially empty
   for(i=1;i<=Nitems;i++)
-    {
-      solution[i]=0;
-    }
+    solution[i]=0;
+
   QUIET=1;
+
   best_value=0;
-
- while(!(next_binary(&solution[1], Nitems)))
+  while(!(next_binary(&solution[1], Nitems)))
     {
-
-      /* ADD CODE IN HERE TO KEEP TRACK OF FRACTION OF ENUMERATION DONE */
-
-          // calculates the value and weight and feasibility:
-      infeasible=check_evaluate_and_print_sol(solution, &total_value, &total_weight);  
-      /* ADD CODE IN HERE TO KEEP TRACK OF BEST SOLUTION FOUND*/
-
+      j=j+1.0;
+      if(!(QUIET))
+	printf("done %g of the full enumeration\n", j/pow(2.0,Nitems));
+      infeasible=check_evaluate_and_print_sol(solution, &total_value, &total_weight);  // calculates the value and weight and feasibility
+      if((infeasible==0)&&(total_value>best_value))
+	{
+	  best_value=total_value;
+	
+	  for(i=1;i<=Nitems;i++)
+	    best_solution[i]=solution[i];	
+	}
+      if(!(QUIET))
+	printf("best so far has value=%d\n", best_value);
+      
     }
- /* ADD CODE TO PRINT OUT BEST SOLUTION */
-
+  QUIET=0;
+  printf("Finished.\nPack the following items for optimal\n");
+  check_evaluate_and_print_sol(best_solution, &total_value, &total_weight);
+  
 }
 
 
@@ -74,7 +84,7 @@ int next_binary(int *str, int Nitems)
   // Called with a binary string of length Nitems, this 
   // function adds "1" to the string, e.g. 0001 would turn to 0010.
   // If the string overflows, then the function returns 1, else it returns 0.
-  int i=Nitems-1;
+  int i=Nitems;
   while(i>=0)
     {
       if(str[i]==1)
@@ -89,11 +99,8 @@ int next_binary(int *str, int Nitems)
 	}
     }
   if(i==-1)
-    {
-      return(1);
-    }
+    return(1);
   else
-    {
-      return(0);
-    }
+    return(0);
+
 }
